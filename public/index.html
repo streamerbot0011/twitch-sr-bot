@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Stream Queue</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0a0a0f;
+      color: white;
+    }
+
+    .header {
+      padding: 20px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      color: #c084fc;
+      border-bottom: 1px solid #1f1f2e;
+    }
+
+    .container {
+      display: flex;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .box {
+      flex: 1;
+      background: #121225;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 0 25px rgba(192, 132, 252, 0.15);
+      border: 1px solid #1f1f2e;
+    }
+
+    h2 {
+      margin-top: 0;
+      color: #c084fc;
+      font-size: 18px;
+    }
+
+    .item {
+      background: #1a1a33;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      border-left: 4px solid #c084fc;
+      transition: 0.2s;
+    }
+
+    .item:hover {
+      transform: scale(1.02);
+      background: #222244;
+    }
+
+    .now {
+      font-size: 22px;
+      padding: 20px;
+      background: linear-gradient(135deg, #7c3aed, #c084fc);
+      border-radius: 12px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    .subtext {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="header">
+    ⭐ guardia_civiil SR Queue
+  </div>
+
+  <div class="container">
+
+    <!-- QUEUE -->
+    <div class="box">
+      <h2>⭐ Queue</h2>
+      <div id="queue"></div>
+    </div>
+
+    <!-- NOW PLAYING -->
+    <div class="box">
+      <h2>🔥 Now Playing</h2>
+      <div id="now" class="now">Nothing playing</div>
+      <div class="subtext">First item in queue</div>
+    </div>
+
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    socket.on("queueUpdate", (queue) => {
+
+      // QUEUE
+      const q = document.getElementById("queue");
+      q.innerHTML = "";
+
+      queue.forEach((item, i) => {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.textContent = `${i + 1}. ${item.request} — ${item.user}`;
+        q.appendChild(div);
+      });
+
+      // NOW PLAYING
+      const now = document.getElementById("now");
+
+      if (queue.length > 0) {
+        now.textContent = queue[0].request;
+      } else {
+        now.textContent = "Nothing playing";
+      }
+
+    });
+  </script>
+
+</body>
+</html>
