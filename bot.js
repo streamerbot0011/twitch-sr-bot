@@ -28,13 +28,10 @@ const queue = [];
 app.delete("/delete/:index", (req, res) => {
   const index = parseInt(req.params.index);
 
-  if (isNaN(index) || index < 0 || index >= queue.length) {
-    return res.status(400).send("Invalid index");
+    if (!isNaN(index) && index >= 0 && index < queue.length) {
+    queue.splice(index, 1);
+    io.emit("queueUpdate", queue);
   }
-
-  queue.splice(index, 1);
-
-  io.emit("queueUpdate", queue);
 
   res.sendStatus(200);
 });

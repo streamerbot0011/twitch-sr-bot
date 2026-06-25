@@ -208,15 +208,40 @@
       document.getElementById("now").textContent =
         queue.length ? queue[0].request : "Nothing playing";
     });
-  </script>
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+const socket = io();
+
 socket.on("queueUpdate", (queue) => {
-  // queue rendering code
+  const q = document.getElementById("queue");
+  q.innerHTML = "";
+
+  queue.forEach((item, i) => {
+    const div = document.createElement("div");
+    div.className = "item";
+
+    div.innerHTML = `
+      <span>${i + 1}. ${item.request} — ${item.user}</span>
+      <button onclick="deleteItem(${i})">❌</button>
+    `;
+
+    q.appendChild(div);
+  });
+
+  document.getElementById("now").textContent =
+    queue.length ? queue[0].request : "Nothing playing";
 });
 
 async function deleteItem(index) {
-  await fetch(`/delete/${index}`, {
-    method: "DELETE"
-  });
+  try {
+    await fetch(`/delete/${index}`, {
+      method: "DELETE"
+    });
+  } catch (err) {
+    console.error(err);
+  }
 }
-</body>
+</script>
+ </body>
 </html>
