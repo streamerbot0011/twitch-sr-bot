@@ -145,3 +145,32 @@ client.on("disconnected", (reason) => {
 client.on("error", (err) => {
   console.log("❌ Twitch error:", err);
 });
+
+// ---------------- GRACEFUL SHUTDOWN ----------------
+async function gracefulShutdown(signal) {
+  console.log(`\n${signal} received. Shutting down gracefully...`);
+  
+  try {
+    // Disconnect from Twitch
+    await client.disconnect();
+    console.log("✅ Disconnected from Twitch");
+  } catch (err) {
+    console.error("Error disconnecting from Twitch:", err);
+  }
+  
+  // Close the HTTP server
+  server.close(() => {
+    console.log("✅ HTTP server closed");
+    process.exit(0);
+  });
+  
+  // Force exit after 10 seconds if graceful shutdown takes too long
+  setTimeout(() => {
+    console.error("❌ Graceful shutdown timeout, forcing exit");
+    process.exit(1);
+  }, 10000);
+}
+
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+
