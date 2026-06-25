@@ -141,6 +141,24 @@
       text-shadow: 0 0 10px rgba(250,204,21,0.4);
     }
   </style>
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.item button {
+  background: #c084fc;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.item button:hover {
+  opacity: 0.8;
+}
 </head>
 
 <body>
@@ -176,17 +194,29 @@
       const q = document.getElementById("queue");
       q.innerHTML = "";
 
-      queue.forEach((item, i) => {
-        const div = document.createElement("div");
-        div.className = "item";
-        div.textContent = `${i + 1}. ${item.request} — ${item.user}`;
-        q.appendChild(div);
-      });
+     queue.forEach((item, i) => {
+  const div = document.createElement("div");
+  div.className = "item";
 
+  div.innerHTML = `
+    <span>${i + 1}. ${item.request} — ${item.user}</span>
+    <button onclick="deleteItem(${i})">❌</button>
+  `;
+
+  q.appendChild(div);
+});
       document.getElementById("now").textContent =
         queue.length ? queue[0].request : "Nothing playing";
     });
   </script>
+socket.on("queueUpdate", (queue) => {
+  // queue rendering code
+});
 
+async function deleteItem(index) {
+  await fetch(`/delete/${index}`, {
+    method: "DELETE"
+  });
+}
 </body>
 </html>

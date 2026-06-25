@@ -20,112 +20,101 @@ app.get("/", (req, res) => {
 const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
-  console.log(`Website running on port ${PORT}`);
+  console.log("Website running on port", PORT);
 });
 
 // ---------------- QUEUE ----------------
 const queue = [];
+app.delete("/delete/:index", (req, res) => {
+  const index = parseInt(req.params.index);
 
-// DEBUG
-console.log("USER:", process.env.TWITCH_USERNAME);
-console.log("OAUTH EXISTS:", !!process.env.TWITCH_OAUTH);
-console.log("OAUTH PREFIX:", process.env.TWITCH_OAUTH?.slice(0, 6));
+  if (isNaN(index) || index < 0 || index >= queue.length) {
+    return res.status(400).send("Invalid index");
+  }
 
+  queue.splice(index, 1);
+
+  io.emit("queueUpdate", queue);
+
+  res.sendStatus(200);
+});
 
 // ---------------- TWITCH CLIENT ----------------
 const client = new tmi.Client({
   options: {
-    debug: true,
-    messagesLogLevel: "info",
+    debug: true
   },
 
   connection: {
     secure: true,
-    reconnect: true,
+    reconnect: true
   },
 
   identity: {
     username: process.env.TWITCH_USERNAME,
-    password: process.env.TWITCH_OAUTH, // MUST be oauth:3d57kf1qglradg3137uqu6gyt3ijwj
+    password: process.env.TWITCH_OAUTH
   },
 
-  channels: [process.env.TWITCH_CHANNEL || "guardia_civiil"],
+  channels: [process.env.TWITCH_CHANNEL]
 });
 
-// connect safely
-client.connect().catch(console.error);
+// IMPORTANT: catch connection errors (prevents crashes)
+client.on("disconnected", (reason) => {
+  console.log("⚠️ Disconnected:", reason);
+});
+
+client.on("error", (err) => {
+  console.log("❌ Twitch error:", err);
+});
+
+// connect
+client.connect().catch((err) => {
+  console.log("❌ CONNECT FAILED:", err);
+});
 
 client.on("connected", () => {
   console.log("✅ Connected to Twitch chat!");
 });
 
-// ---------------- SAFETY HELPERS ----------------
+// ---------------- HELPERS ----------------
 function isMod(tags) {
   return tags.mod || tags.badges?.broadcaster === "1";
 }
 
-async function safeSay(channel, message) {
-  try {
-    await client.say(channel, message);
-  } catch (err) {
-    console.log("❌ Failed to send message:", err.message);
-  }
-}
-
-// ---------------- CHAT COMMANDS ----------------
-client.on("message", async (channel, tags, message, self) => {
+// ---------------- CHAT ----------------
+client.on("message", (channel, tags, message, self) => {
   if (self) return;
 
   const msg = message.trim();
 
-  // ADD SONG REQUEST
   if (msg.startsWith("!sr ")) {
-    const request = msg.slice(4).trim();
-
     queue.push({
       user: tags.username,
-      request,
+      request: msg.slice(4)
     });
 
     io.emit("queueUpdate", queue);
     return;
   }
 
-  // NEXT (MOD ONLY)
   if (msg === "!next") {
     if (!isMod(tags)) return;
-
     queue.shift();
     io.emit("queueUpdate", queue);
     return;
   }
 
-  // CLEAR (MOD ONLY)
   if (msg === "!clear") {
     if (!isMod(tags)) return;
-
     queue.length = 0;
     io.emit("queueUpdate", queue);
     return;
   }
 
-  // REMOVE (MOD ONLY)
-  if (msg.startsWith("!remove ")) {
-    if (!isMod(tags)) return;
-
-    const index = parseInt(msg.split(" ")[1]) - 1;
-
-    if (!isNaN(index) && index >= 0 && index < queue.length) {
-      queue.splice(index, 1);
-      io.emit("queueUpdate", queue);
-    }
-    return;
-  }
-
-  // SHOW QUEUE
   if (msg === "!calls") {
     if (queue.length === 0) {
-      return safeSay(channel, "Queue is empty.");
+      client.say(channel, "Queue is empty.");
+      return;
     }
 
     const list = queue
@@ -133,15 +122,6 @@ client.on("message", async (channel, tags, message, self) => {
       .map((x, i) => `${i + 1}. ${x.request} (${x.user})`)
       .join(" | ");
 
-    return safeSay(channel, `Queue: ${list}`);
+    client.say(channel, `Queue: ${list}`);
   }
-});
-
-// ---------------- ERROR HANDLING ----------------
-client.on("disconnected", (reason) => {
-  console.log("⚠️ Disconnected:", reason);
-});
-
-client.on("error", (err) => {
-  console.log("❌ Twitch error:", err);
 });
