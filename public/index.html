@@ -3,185 +3,75 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>guardia_civiil sr!</title>
+<title>Stream Queue</title>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
-
-:root{
-  --bg:#07060d;
-  --panel:#121225;
-  --purple:#a855f7;
-  --purple2:#c084fc;
-  --text:#f5f3ff;
+body {
+  margin: 0;
+  font-family: Arial;
+  background: #0b0a10;
+  color: white;
 }
 
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:Inter,sans-serif;
+.header {
+  padding: 20px;
+  text-align: center;
+  font-size: 24px;
+  color: #c084fc;
 }
 
-body{
-  background:radial-gradient(circle at top,#120a1f,var(--bg));
-  color:var(--text);
-  min-height:100vh;
-  overflow-x:hidden;
+.container {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
 }
 
-.glow{
-  position:fixed;
-  width:500px;
-  height:500px;
-  border-radius:50%;
-  filter:blur(120px);
-  opacity:.25;
-  z-index:0;
+.box {
+  flex: 1;
+  background: #151424;
+  padding: 20px;
+  border-radius: 12px;
 }
 
-.g1{
-  background:#7c3aed;
-  top:-150px;
-  left:-150px;
+.item {
+  display: flex;
+  justify-content: space-between;
+  background: #1e1d33;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 8px;
 }
 
-.g2{
-  background:#a855f7;
-  bottom:-150px;
-  right:-150px;
-}
-
-header{
-  text-align:center;
-  padding:40px 20px 20px;
-  position:relative;
-  z-index:1;
-}
-
-header h1{
-  color:var(--purple2);
-  font-size:34px;
-  font-weight:800;
-  text-shadow:0 0 20px rgba(192,132,252,.4);
-}
-
-header p{
-  opacity:.7;
-  margin-top:8px;
-}
-
-.container{
-  max-width:1100px;
-  margin:auto;
-  padding:20px;
-  display:grid;
-  grid-template-columns:1.3fr .7fr;
-  gap:20px;
-  position:relative;
-  z-index:1;
-}
-
-.card{
-  background:var(--panel);
-  border:1px solid rgba(168,85,247,.2);
-  border-radius:18px;
-  padding:20px;
-  box-shadow:0 0 30px rgba(168,85,247,.08);
-}
-
-.card h2{
-  color:var(--purple2);
-  margin-bottom:15px;
-}
-
-.item{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  background:rgba(255,255,255,.03);
-  border:1px solid rgba(255,255,255,.05);
-  padding:12px;
-  border-radius:12px;
-  margin-bottom:10px;
-}
-
-.item-text{
-  flex:1;
-  word-break:break-word;
-}
-
-.delete-btn{
-  background:#ef4444;
-  border:none;
-  color:white;
-  width:32px;
-  height:32px;
-  border-radius:8px;
-  cursor:pointer;
-  font-size:14px;
-}
-
-.delete-btn:hover{
-  opacity:.8;
-}
-
-.now{
-  background:linear-gradient(135deg,#7c3aed,#c084fc);
-  padding:30px;
-  border-radius:16px;
-  text-align:center;
-  font-size:22px;
-  font-weight:700;
-}
-
-.subtext{
-  text-align:center;
-  margin-top:10px;
-  opacity:.7;
-  font-size:12px;
-}
-
-.empty{
-  opacity:.6;
-  text-align:center;
-  padding:20px;
+button {
+  background: #ef4444;
+  border: none;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 5px 10px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="glow g1"></div>
-<div class="glow g2"></div>
-
-<header>
-  <h1>⭐ guardia_civiil sr!</h1>
-  <p>Powered by Twitch chat</p>
-</header>
+<div class="header">⭐ guardia_civiil SR Queue</div>
 
 <div class="container">
 
-  <div class="card">
-    <h2>⭐ Queue</h2>
-    <div id="queue">
-      <div class="empty">No calls in queue</div>
-    </div>
+  <div class="box">
+    <h3>Queue</h3>
+    <div id="queue"></div>
   </div>
 
-  <div class="card">
-    <h2>⭐ Now Playing</h2>
-    <div id="now" class="now">
-      Nothing playing
-    </div>
-    <div class="subtext">First item in queue</div>
+  <div class="box">
+    <h3>Now Playing</h3>
+    <div id="now">Nothing playing</div>
   </div>
 
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
-
 <script>
 const socket = io();
 
@@ -189,21 +79,19 @@ socket.on("queueUpdate", (queue) => {
   const q = document.getElementById("queue");
   q.innerHTML = "";
 
-  if(queue.length === 0){
-    q.innerHTML = '<div class="empty">No calls in queue</div>';
+  if (queue.length === 0) {
+    q.innerHTML = "Empty queue";
     document.getElementById("now").textContent = "Nothing playing";
     return;
   }
 
-  queue.forEach((item, index) => {
+  queue.forEach((item, i) => {
     const div = document.createElement("div");
     div.className = "item";
 
     div.innerHTML = `
-      <div class="item-text">
-        ${index + 1}. ${item.request} — ${item.user}
-      </div>
-      <button class="delete-btn" onclick="deleteItem(${index})">✕</button>
+      <span>${i + 1}. ${item.request} — ${item.user}</span>
+      <button onclick="deleteItem(${i})">✕</button>
     `;
 
     q.appendChild(div);
@@ -212,14 +100,10 @@ socket.on("queueUpdate", (queue) => {
   document.getElementById("now").textContent = queue[0].request;
 });
 
-async function deleteItem(index){
-  try{
-    await fetch("/delete/" + index,{
-      method:"DELETE"
-    });
-  }catch(err){
-    console.error(err);
-  }
+async function deleteItem(index) {
+  await fetch("/delete/" + index, {
+    method: "DELETE"
+  });
 }
 </script>
 
