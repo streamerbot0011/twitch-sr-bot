@@ -26,6 +26,12 @@ server.listen(PORT, () => {
 // ---------------- QUEUE ----------------
 const queue = [];
 
+// DEBUG
+console.log("USER:", process.env.TWITCH_USERNAME);
+console.log("OAUTH EXISTS:", !!process.env.TWITCH_OAUTH);
+console.log("OAUTH PREFIX:", process.env.TWITCH_OAUTH?.slice(0, 6));
+
+
 // ---------------- TWITCH CLIENT ----------------
 const client = new tmi.Client({
   options: {
@@ -40,7 +46,7 @@ const client = new tmi.Client({
 
   identity: {
     username: process.env.TWITCH_USERNAME,
-    password: process.env.TWITCH_OAUTH, // MUST be oauth:7deatb9zudqbodr8o82pwbtdq1k6av
+    password: process.env.TWITCH_OAUTH, // MUST be oauth:3d57kf1qglradg3137uqu6gyt3ijwj
   },
 
   channels: [process.env.TWITCH_CHANNEL || "guardia_civiil"],
